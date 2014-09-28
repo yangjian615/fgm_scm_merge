@@ -1,0 +1,5 @@
+.DS_Store
+/rsync_exclude_fsm.txt
+/update_fsm.sh
+/create_symlink_fsm.sh
+*.m~
