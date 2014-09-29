@@ -76,12 +76,14 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
 % CHECK REFERENCE TIME \\\\\\\\\\\\\\\\\\\\\\ %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    % If "ref_time" is < 0, then it indicates an index into SCM
-    % time array. Convert it to a number, get the time, then
-    % convert the time to a string in the form 'HHMMSS'.
+    % "ref_time" is < 0
+    %   - It is an into then FGM time array.
+    %   - Get the time indicated by the index.
+    %   - Must be FGM because of how get_start_ind.m works.
+    %       o see "assert" therein.
     if strcmp(ref_time(1), '-')
         ref_index = abs(str2double(ref_time));
-        ref_time  = scm.t(ref_index);
+        ref_time  = fgm.t(ref_index);
         ref_time  = ssm_to_hms(ref_time, 'to_string', true);
     end
 
@@ -178,17 +180,15 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
     % MAKE "MULTIPLIER" ADAPTIVE \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
-        % Make the multiplier adaptive. If the data interval to
-        % merge is shorter than the FFT interval, then try to
-        % reduce the FFT interval.
-        %
-        % Since we are taking quarters of the FFT interval and 
-        % "clen" must be even, make sure that multiplier at least 4.
+        % Make the multiplier adaptive.
+        %   - max_number =< 0 if the window is bigger than the number of
+        %       points available to merge. Shrink the multiplier until
+        %       max_number > 0.
+        %   - new_multiplier is a power of 2 and must be at least 2^1 so
+        %       that the length of the FFT interval is guaranteed to be even.
         %
         new_multiplier = multiplier;
-        ccdi_len_fgm = fgm.intervals(ii,2) - fgm.intervals(ii,1) + 1;
-        ccdi_len_scm = scm.intervals(ii,2) - scm.intervals(ii,1) + 1;
-        while (max_number <= 1 && new_multiplier > 4) || fgm.clen > ccdi_len_fgm || scm.clen > ccdi_len_scm
+        while max_number < 1 && new_multiplier >= 2
             new_multiplier = new_multiplier / 2;
             fgm.get_fft_clen(new_multiplier)
             scm.get_fft_clen(new_multiplier)
@@ -204,8 +204,10 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
         % If the continuous data interval is still shorter than
         % that needed to perform an FFT. Skip to the next merging
         % interval
-        if n_max <= 1 || multiplier <= 4 || fgm.clen > ccdi_len_fgm || scm.clen > ccdi_len_scm
-            disp(['Skipping interval ', num2str(ii)])
+        if max_number <= 1 || new_multiplier < 2
+            str = sprintf('  Skipping Interval %i., Data interval < Merging interval: %i < %i.', ...
+                          ii, (fgm.intervals(ii,2) - fgm.intervals(ii,1) + 1), 2*fgm.clen);
+            disp(str);
             continue
         end
 

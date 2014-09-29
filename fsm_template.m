@@ -1,6 +1,6 @@
 % Inputs to FGM_SCM_Merge
 mission      = 'C';
-spacecraft   = '2';             % Must be string.
+spacecraft   = '3';             % Must be string.
 date         = '2001-02-13';    % YYYY-MM-DD
 tstart       = '00:00:00';      % HH:MM:SS
 tend         = '24:00:00';      % HH:MM:SS
@@ -11,12 +11,12 @@ multiplier   = 64;
 n_min        = 1.5;
 n_max        = 6;
 coord_sys    = 'SPIN';
-root         = '/Users/argall/Documents/Work';
-fgm_data_dir = fullfile(root, 'Data', 'Cluster', 'FSR');
-scm_data_dir = fullfile(root, 'Data', 'Cluster', 'STAFF');
-attitude_dir = fullfile(root, 'Programs', 'Magnetic Merging', 'Data', 'orbit');
-srt_dir      = fullfile(root, 'Programs', 'Magnetic Merging', 'Data', 'orbit');
-transfr_dir  = fullfile(root, 'Programs', 'Magnetic Merging', 'Data', 'Transfer_Functions');
+root         = '/Users/argall/Documents/';
+fgm_data_dir = fullfile(root, 'Work', 'Data', 'Cluster', 'FSR');
+scm_data_dir = fullfile(root, 'Work', 'Data', 'Cluster', 'STAFF');
+attitude_dir = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'orbit');
+srt_dir      = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'orbit');
+transfr_dir  = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'Transfer_Functions');
 
 % Merge the indicated datasets
 [t, b] = fgm_scm_merge( mission, spacecraft, date, tstart, tend, ...
