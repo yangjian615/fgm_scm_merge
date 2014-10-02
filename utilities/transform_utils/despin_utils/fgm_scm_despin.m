@@ -24,7 +24,7 @@ function [b_despun] = fgm_scm_despin(t, b, mission, sc, date, varargin)
             end
             
             attitude_dir = varargin{1};
-            srt_dir = varargin{2};
+            srt_dir      = varargin{2};
                     
         % Unrecognized Mission
         otherwise
@@ -38,7 +38,7 @@ function [b_despun] = fgm_scm_despin(t, b, mission, sc, date, varargin)
     % Find major data gaps. Make a list of start and stop indices for each interval.
     [intervals, n_intervals] = find_gaps(t, 6, inf);
     if n_intervals == 0
-        intervals = [1 length(t)];
+        intervals   = [1 length(t)];
         n_intervals = 1;
     else
         % The concatenation that follows requires a row vector.
@@ -48,7 +48,7 @@ function [b_despun] = fgm_scm_despin(t, b, mission, sc, date, varargin)
         
         % "find_gaps" returns the number of data gaps. There are "n_intervals + 1" number
         % of data intervals
-        intervals = [1, intervals+1; intervals, length(t)]';
+        intervals   = [1, intervals+1; intervals, length(t)]';
         n_intervals = n_intervals + 1;
     end
     

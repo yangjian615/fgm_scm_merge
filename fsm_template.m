@@ -1,6 +1,6 @@
 % Inputs to FGM_SCM_Merge
 mission      = 'C';
-spacecraft   = '3';             % Must be string.
+spacecraft   = '1';             % Must be string.
 date         = '2001-02-13';    % YYYY-MM-DD
 tstart       = '00:00:00';      % HH:MM:SS
 tend         = '24:00:00';      % HH:MM:SS
@@ -10,13 +10,13 @@ f_max        = 1.5;
 multiplier   = 64;
 n_min        = 1.5;
 n_max        = 6;
-coord_sys    = 'SPIN';
-root         = '/Users/argall/Documents/';
-fgm_data_dir = fullfile(root, 'Work', 'Data', 'Cluster', 'FSR');
-scm_data_dir = fullfile(root, 'Work', 'Data', 'Cluster', 'STAFF');
-attitude_dir = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'orbit');
-srt_dir      = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'orbit');
-transfr_dir  = fullfile(root, 'MATLAB', 'Magnetic Merging', 'Data', 'Transfer_Functions');
+coord_sys    = 'GSE';
+root         = '/Users/argall/Documents/Work/Data/Cluster';
+fgm_data_dir = fullfile(root, 'FSR');
+scm_data_dir = fullfile(root, 'STAFF');
+attitude_dir = fullfile(root, 'attitude');
+srt_dir      = fullfile(root, 'srt');
+transfr_dir  = fullfile(root, 'Transfer_Functions');
 
 % Merge the indicated datasets
 [t, b] = fgm_scm_merge( mission, spacecraft, date, tstart, tend, ...
@@ -39,7 +39,8 @@ date      = strrep(date, '-', '');
 tstart    = strrep(tstart, ':', '');
 tend      = strrep(tend, ':', '');
 directory = '/Users/argall/Documents/Work/Data/Cluster/Merged/';
-filename  = fullfile(directory, [mission, spacecraft, '_Merged_', coord_sys, '_', date, '_', tstart, '_', tend, '.mat']);
+filename  = fullfile(directory, [mission, spacecraft, '_Merged_', ...
+                     coord_sys, '_', date, '_', tstart, '_', tend, '.mat']);
 save(filename, 't', 'b');
 disp(['File output to: ', filename]);
 

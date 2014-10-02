@@ -1,13 +1,19 @@
 %--------------------------------------------------------------------------
 % NAME
-%   SCS
+%   srs2scs_STAFF
 %
 % PURPOSE
-%   Transform data from the STAFF (search coil) instrument in the spinning
-%   spacecraft reference frame to the inertial frame of the spacecraft,
-%   co-aligned with the FSR (flux gate magnetometer) instrument frame. The
-%   difference between the two STAFF and FSR inertial frames is 32.7
-%   degrees.
+%   Transform from the Spin Reference Frame (SRS) to the Spin Reference2
+%   (SR2) system. At the same time, transform from STAFF's
+%   coordinate system to that of FSR. This involves a fixed rotation of
+%   32.7 degrees and the interchange of axes.
+%
+%   REFERENCES:
+%       Robert, P., Cornilleau-Wehrlin, N., Piberne, R., de Conchy, Y., 
+%           Lacombe, C., Bouzid, V., ? Canu, P. (2014). CLUSTER-STAFF 
+%           search coil magnetometer calibration - comparisons with FGM. 
+%           Geoscientific Instrumentation, Methods and Data Systems, 3(2),
+%           153?177. doi:10.5194/gi-3-153-2014
 %
 % INPUTS
 %   DATA:           in, required, type=3xN double array
@@ -34,10 +40,10 @@
 %       SCSfSCSi.m
 %       fast_rot.m
 %--------------------------------------------------------------------------
-function [b_scs] = SCS(data, OMEGA, dt, time, srtime)
+function [b_scs] = STAFF_despin(data, OMEGA, dt, time, srtime)
 
     % Get the number of data points per period
-    nPeriod = round((2*pi)/(OMEGA * dt ));
+    nPeriod = round((2*pi)/(OMEGA * dt));
     
     nPts   = length(data);         % length of data interval
     nSpins = ceil(nPts/nPeriod);   % number of spin periods per data interval
@@ -58,10 +64,15 @@ function [b_scs] = SCS(data, OMEGA, dt, time, srtime)
         % The number of points in this spin period
         j_len = eIndex - sIndex + 1;
         
-        %
         % Build a coordinate transformation that spins us clockwise back
         % to where an axis is pointing at the sun.
-        SCS_mat = SCSfSCSi(time(sIndex), srtime, OMEGA);
+        SCS_mat = STAFF2FSR_despun(time(sIndex), srtime, OMEGA);
+        
+        try
+            error(lastwarn);
+        catch err
+            disp(lastwarn);
+        end
         
         % fast_rotat
         %   - Despin all points to time(sIndex)

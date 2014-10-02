@@ -40,13 +40,12 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
     % Optional Inputs to fgm_scm_despin and fgm_scm_scs2gse.
     switch mission
         case 'C'
-            optArg1 = inputs.date;
             optArg1 = inputs.attitude_dir;
             optArg2 = inputs.srt_dir;
         case 'RBSP'
             optArg1 = inputs.date;
-            optArg1 = inputs.n_sec;
-            optArg2 = inputs.spice_kernel;
+            optArg2 = inputs.n_sec;
+            optArg3 = inputs.spice_kernel;
         otherwise
             if ~strcmp(coord_sys, 'SPIN')
                 error('Mission %s does not have Despinning/Coord Transform implemented', mission)
@@ -205,7 +204,7 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
         % that needed to perform an FFT. Skip to the next merging
         % interval
         if max_number <= 1 || new_multiplier < 2
-            str = sprintf('  Skipping Interval %i., Data interval < Merging interval: %i < %i.', ...
+            str = sprintf('  Skipping Interval %i. Data interval < Merging interval: %i < %i.', ...
                           ii, (fgm.intervals(ii,2) - fgm.intervals(ii,1) + 1), 2*fgm.clen);
             disp(str);
             continue
@@ -285,7 +284,7 @@ function [t, b, fgm, scm] = fgm_scm_merge(mission, sc, date, tstart, tend, varar
         case 'SCS'
             if ~strcmp(mission, 'RBSP')
                 b = fgm_scm_despin(scm.t, b_scs_spin, mission, sc, date, ...
-                                   optArg1, optArg2, optArg3);
+                                   optArg1, optArg2);
             else
                 b = b_scs_spin;
                 disp('Cannot despin %s data. Returning in the spinning spacecraft frame.', mission);

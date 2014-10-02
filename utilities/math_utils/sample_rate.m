@@ -1,1 +1,1 @@
-/Users/argall/Documents/Work/Programs/MyLibraryMatLab/utilities/math_utils/sample_rate.m
+/Users/argall/Documents/MATLAB/MATLABlib/utilities/math_utils/sample_rate.m

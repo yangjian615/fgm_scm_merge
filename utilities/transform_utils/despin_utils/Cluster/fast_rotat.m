@@ -33,9 +33,9 @@ function v_out = fast_rotat(v_in, dt, N_rotate, OMEGA)
     %   - alt. N_rotate = 2*pi/(dt_staff*omega);
     if ( isempty(cos_rot) || (N_rotate~= L_rotate))
         L_rotate = N_rotate;
-        cos_rot  = OMEGA*dt*(0:N_rotate-1)';
-        sin_rot  = single( sin( cos_rot ) );
-        cos_rot  = single( cos( cos_rot) );
+        cos_rot  = -OMEGA*dt*(0:N_rotate-1)';
+        sin_rot  =  single( sin( cos_rot ) );
+        cos_rot  =  single( cos( cos_rot ) );
     end
     
     %

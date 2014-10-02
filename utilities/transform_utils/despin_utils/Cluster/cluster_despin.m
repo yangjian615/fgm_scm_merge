@@ -62,5 +62,5 @@ function [despun] = cluster_despin(t, data, sc, date, attitude_dir, srt_dir)
     
     % Despin the data
     %   - Note that omega is given as a constant scalar value.
-    despun = SCS(data, omega, dt, t, srtime);
+    despun = STAFF_despin(data, omega, dt, t, srtime);
 end

@@ -3,16 +3,21 @@
 %   SCSfSCSi
 %
 % PURPOSE
-%   Use the spin frequency of the Cluster spacecraft as well as the output
-%   from the sun sensor to determine how far into a spin each data
-%   point was recorded. Then, using this information, create a transformation
-%   matrix to transform the spinning frame about the spin axis backwards
-%   through the spin cycle so that data points are co-aligned with the 
-%   instrument's inertial frame. Rotate by an additional fixed 32.7 degrees
-%   to change from the STAFF instrument frame to the FGM instrument frame.
+%   Transform from the STAFF's Sensor Coordinate System (SCS) to the despun
+%   Spin Reference2 (SR2) system. Rotate by an additional 32.7 degrees
+%   about the spin axis to bring STAFF's  axes into alignment with those of
+%   FSR. Finally, interchange STAFF's axes so that [x,y,z]_STAFF
+%   corresponds to [x,y,z]_FSR.
 %
 %   NOTE
 %       32.7 degrees = 0.5707226654 radians
+%
+%   REFERENCES:
+%       Robert, P., Cornilleau-Wehrlin, N., Piberne, R., de Conchy, Y., 
+%           Lacombe, C., Bouzid, V., ? Canu, P. (2014). CLUSTER-STAFF 
+%           search coil magnetometer calibration - comparisons with FGM. 
+%           Geoscientific Instrumentation, Methods and Data Systems, 3(2),
+%           153?177. doi:10.5194/gi-3-153-2014
 %
 % INPUTS
 %   TIME:           in, required, type=double
@@ -29,7 +34,7 @@
 %                       from the spinning frame to the flux-gate%
 %                       magnetometer's instrument frame.
 %--------------------------------------------------------------------------
-function [rotmat] = SCSfSCSi(time, srtime, OMEGA)
+function [rotmat] = STAFF2FSR_despun(time, srtime, OMEGA)
     %
     %   routine to get a matrix to get to SCS system at any time,
     %   from an initial SCS-like system, but where the x-axis points
@@ -43,6 +48,9 @@ function [rotmat] = SCSfSCSi(time, srtime, OMEGA)
     
     % Get the Sun-Reference Time just prior to the given time stamp
     index = find(srtime > time, 1) - 1;
+    if isempty(index)
+        index = length(srtime);
+    end
     if index < 1
         index = 1;
     end
