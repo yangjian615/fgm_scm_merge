@@ -3,3 +3,4 @@
 /update_fsm.sh
 /create_symlink_fsm.sh
 *.m~
+docs

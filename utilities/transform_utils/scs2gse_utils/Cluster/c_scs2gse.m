@@ -59,6 +59,5 @@ function [gse_data] = c_scs2gse(t, scs_despun_data, sc, date, attitude_dir, srt_
     
     % Rotate
     gse_data = scs2gse(scs_despun_data, ...
-                       omega, dt, t, ...
-                       srtime, year, month, day, ra, dec);
+                       dt, t, year, month, day, ra, dec);
 end
