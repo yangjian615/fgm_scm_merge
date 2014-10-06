@@ -10,7 +10,7 @@ f_max        = 1.5;
 multiplier   = 64;
 n_min        = 1.5;
 n_max        = 6;
-coord_sys    = 'GSE';
+coord_sys    = 'GSE';           % SPIN | SCS | GSE
 root         = '/Users/argall/Documents/Work/Data/Cluster';
 fgm_data_dir = fullfile(root, 'FSR');
 scm_data_dir = fullfile(root, 'STAFF');
@@ -33,18 +33,58 @@ transfr_dir  = fullfile(root, 'Transfer_Functions');
                         'srt_dir',       srt_dir,      ...
                         'TransfrFn_dir', transfr_dir   ...
                       );
+clear ref_time f_min f_max multiplier n_min n_max ...
+      root fgm_data_dir scm_data_dir attitude_dir srt_dir transfr_dir ...
+      tstart tend
 
-% Save data to a MatFile
-date      = strrep(date, '-', '');
-tstart    = strrep(tstart, ':', '');
-tend      = strrep(tend, ':', '');
+%--------------------------
+% Convert Time to Epoch   |
+%--------------------------
+%   - Convert time to Epoch (using old CDF library for the moment).
+t_epoch = zeros(size(t));
+year    = str2double(date(1:4));
+month   = str2double(date(6:7));
+day     = str2double(date(9:10));
+hour    = floor(t / 3600);
+minute  = floor((t - hour*3600) / 60);
+seconds = floor(mod(t, 60));
+milli   = floor(mod(t, 1)*1000);
+for ii = 1: length(t)
+    t_epoch(ii) = cdflib.computeEpoch([year, month, day, ...
+                                       hour(ii), minute(ii), seconds(ii), ...
+                                       milli(ii)]);
+end
+clear ii year month day hour minute seconds milli
+
+
+%--------------------------
+% Save to File            |
+%--------------------------
+% Create file name.
+%   - Use MMS file name convention.
+%       scId_instrumentId_mode_dataLevel_optionalDataProductDescriptor_startTime_vX.Y.Z.cdf
+year  = date(1:4);
+month = date(6:7);
+day   = date(9:10);
+date  = [year month day];
 directory = '/Users/argall/Documents/Work/Data/Cluster/Merged/';
-filename  = fullfile(directory, [mission, spacecraft, '_Merged_', ...
-                     coord_sys, '_', date, '_', tstart, '_', tend, '.mat']);
-save(filename, 't', 'b');
-disp(['File output to: ', filename]);
+filename  = fullfile(directory, ['c', spacecraft, '_afg-dfg-scm_', ...
+                                 'srvy', '_', coord_sys, '_', date, '_v0.0.0']);
+                             
+% Save to MAT file
+save([filename, '.mat'], 't', 't_epoch', 'b');
+disp(['File output to: ', filename, '.mat']);
 
-% Visualize the results
+% Create CDF file
+fsm_cdflib_write([filename, '.cdf'], t, single(b'));
+disp(['File output to: ', filename, '.cdf']);
+
+clear mission spacecraft date year month day
+
+
+%--------------------------
+% Plot Results            |
+%--------------------------
 plot(t/3600., b);
 title('Merged Data Product');
 xlabel([date, ' (Hours)']);

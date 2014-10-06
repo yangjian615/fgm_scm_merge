@@ -10,15 +10,28 @@
 %       Write merged magnetometer time (T) and magnetic field (B) data
 %       to file FILENAME.
 %--------------------------------------------------------------------------
-function [] = fsm_write(filename, t, b)
+function [] = fsm_cdflib_write(filename, t, b)
     
-    % Create a file name
-    dir      = '/Users/argall/Documents/Work/Data/Cluster/Merged/';
-    filename = fullfile(dir, 'c1_fields_srvy_20010318_v0.0.0.cdf');
+    nPts = length(t);
+
+    % Necessities
+    %   - File must not already exist.
+    %   - Magnetic field must be single precision
+    %   - Magnetic field must be a row-vector (3xN)
+    assert(exist(filename, 'file') == 0, ['File already exists: "', filename, '".']);
+    assert(isa(b, 'single'), 'Magnetic field must be single precision.');
+    assert(isequal(size(b), [3 nPts]), 'B must be 3xN.');
+    
+    instID    = 'c1';
+    mode      = 'srvy';
+    level     = 'l2';
+    optdesc   = '';
+    startTime = '20010213';
+    version   = 'v0.0.0';
     
     % Dissect the file name for later
-    [pathstr, fname, ext] = fileparts(filename);
-    [instID, mode, level, optdesc, startTime, version] = mms_dissect_filename(filename);
+%     [pathstr, fname, ext] = fileparts(filename);
+%     [instID, mode, level, optdesc, startTime, version] = mms_dissect_filename(filename);
 
     % Open the file
     cdf_id = cdflib.create(filename);
@@ -33,10 +46,10 @@ function [] = fsm_write(filename, t, b)
     %           Plasma and Solar Wind
     %           Spacecraft Potential Control
     type       = cdflib.createAttr(cdf_id, 'Data_type',                  'global_scope');
-    version    = cdflib.createAttr(cdf_id, 'Data_version',               'global_scope');
+    ver        = cdflib.createAttr(cdf_id, 'Data_version',               'global_scope');
     desc       = cdflib.createAttr(cdf_id, 'Descriptor',                 'global_scope');
-    desc       = cdflib.createAttr(cdf_id, 'Discipline',                 'global_scope');
-    dspln      = cdflib.createAttr(cdf_id, 'Generation_date',            'global_scope');
+    dspln      = cdflib.createAttr(cdf_id, 'Discipline',                 'global_scope');
+    gen_date   = cdflib.createAttr(cdf_id, 'Generation_date',            'global_scope');
     inst_type  = cdflib.createAttr(cdf_id, 'Instrument_type',            'global_scope');
     file_id    = cdflib.createAttr(cdf_id, 'Logical_file_id',            'global_scope');
     src        = cdflib.createAttr(cdf_id, 'Logical_source',             'global_scope');
@@ -81,109 +94,120 @@ function [] = fsm_write(filename, t, b)
     vartype    = cdflib.createAttr(cdf_id, 'VARTYPE',       'variable_scope');
     
 %------------------------------------------------------
+% Create Variables                                    |
+%------------------------------------------------------
+    % Variable naming convention
+    %   scId_instrumentId_paramName_optionalDescriptor
+    t_vname      = 'Epoch';
+    b_vname      = [instID, '_', 'afg_dfg_scm', '_', 'b', '_', 'xyz'];
+    b_labl_vname = 'B_Labl_Ptr';
+    
+    % Create the variables
+    t_ID     = cdflib.createVar(cdf_id, t_vname,      'CDF_EPOCH', 1, [], true,  []);
+    b_ID     = cdflib.createVar(cdf_id, b_vname,      'CDF_REAL4', 1,  3, true,  true);
+    b_ptr_ID = cdflib.createVar(cdf_id, b_labl_vname, 'CDF_CHAR',  1,  2, false, true);
+    
+%------------------------------------------------------
 % Write Global Attributes                             |
 %------------------------------------------------------
-    cdflib.putAttrgEntry(cdf_id, type,       0, 'CDF_BYTE', strjoin({mode level optdesc}, '_'));
-    cdflib.putAttrgEntry(cdf_id, version,    0, 'CDF_BYTE', version);
-    cdflib.putAttrgEntry(cdf_id, desc,       0, 'CDF_BYTE', 'AFG-DFG-SCM');
-    cdflib.putAttrgEntry(cdf_id, dscln,      0, 'CDF_BYTE', 'Space Physics>Magnetospheric Science');
-    cdflib.putAttrgEntry(cdf_id, gen_date,   0, 'CDF_BYTE', datestr(now(), 'yyyymmdd'));
-    cdflib.putAttrgEntry(cdf_id, inst_type,  0, 'CDF_BYTE', 'Magnetic Fields (space)');
-    cdflib.putAttrgEntry(cdf_id, file_id,    0, 'CDF_BYTE', fname);
-    cdflib.putAttrgEntry(cdf_id, src,        0, 'CDF_BYTE', strjoin({instID 'afg-dfg-scm' mode level optdesc}, '_'));
-    cdflib.putAttrgEntry(cdf_id, src_desc,   0, 'CDF_BYTE', '');
-    cdflib.putAttrgEntry(cdf_id, mission,    0, 'CDF_BYTE', 'MMS');
-    cdflib.putAttrgEntry(cdf_id, pi_affil,   0, 'CDF_BYTE', 'SWRI, UNH');
-    cdflib.putAttrgEntry(cdf_id, pi,         0, 'CDF_BYTE', 'J. Burch, R. Torbert)');
-    cdflib.putAttrgEntry(cdf_id, project,    0, 'CDF_BYTE', 'STP>Solar Terrestrial Physics');
-    cdflib.putAttrgEntry(cdf_id, src_name,   0, 'CDF_BYTE', 'MMS#>MMS Satellite Number #');
-    cdflib.putAttrgEntry(cdf_id, text,       0, 'CDF_BYTE', ['The merged magnetic field ', ...
+    cdflib.putAttrgEntry(cdf_id, type,       0, 'CDF_CHAR', [mode '_' level '_' optdesc]);
+    cdflib.putAttrgEntry(cdf_id, ver,        0, 'CDF_CHAR', version);
+    cdflib.putAttrgEntry(cdf_id, desc,       0, 'CDF_CHAR', 'AFG-DFG-SCM');
+    cdflib.putAttrgEntry(cdf_id, dspln,      0, 'CDF_CHAR', 'Space Physics>Magnetospheric Science');
+    cdflib.putAttrgEntry(cdf_id, gen_date,   0, 'CDF_CHAR', datestr(now(), 'yyyymmdd'));
+    cdflib.putAttrgEntry(cdf_id, inst_type,  0, 'CDF_CHAR', 'Magnetic Fields (space)');
+    cdflib.putAttrgEntry(cdf_id, file_id,    0, 'CDF_CHAR', filename);
+    cdflib.putAttrgEntry(cdf_id, src,        0, 'CDF_CHAR', [instID '_afg-dfg-scm_' mode level optdesc]);
+    cdflib.putAttrgEntry(cdf_id, src_desc,   0, 'CDF_CHAR', ' ');
+    cdflib.putAttrgEntry(cdf_id, mission,    0, 'CDF_CHAR', 'MMS');
+    cdflib.putAttrgEntry(cdf_id, pi_affil,   0, 'CDF_CHAR', 'SWRI, UNH');
+    cdflib.putAttrgEntry(cdf_id, pi,         0, 'CDF_CHAR', 'J. Burch, R. Torbert)');
+    cdflib.putAttrgEntry(cdf_id, project,    0, 'CDF_CHAR', 'STP>Solar Terrestrial Physics');
+    cdflib.putAttrgEntry(cdf_id, src_name,   0, 'CDF_CHAR', 'MMS#>MMS Satellite Number #');
+    cdflib.putAttrgEntry(cdf_id, text,       0, 'CDF_CHAR', ['The merged magnetic field ', ...
         'dataset is a combination of the DFG and SCM magnetometers. Merging is done in the', ...
         'frequency domain in the same step as data calibration. Instrument papers for DFT', ...
         'and SCM can be found at the following links: ', ...
         '', ...
         '']);
-    cdflib.putAttrgEntry(cdf_id, link,       0, 'CDF_BYTE', 'http://mms-fields.unh.edu/');
-    cdflib.putAttrgEntry(cdf_id, link,       1, 'CDF_BYTE', 'http://mms.gsfc.nasa.gov/index.html');
-    cdflib.putAttrgEntry(cdf_id, link_text,  0, 'CDF_BYTE', 'UNH FIELDS Home Page');
-    cdflib.putAttrgEntry(cdf_id, link_text,  1, 'CDF_BYTE', 'NASA MMS Home');
-    cdflib.putAttrgEntry(cdf_id, link_title, 0, 'CDF_BYTE', 'UNH FIELDS');
-    cdflib.putAttrgEntry(cdf_id, link_title, 1, 'CDF_BYTE', 'NASA MMS Home');
-    cdflib.putAttrgEntry(cdf_id, mods,       0, 'CDF_Bg4YTE', 'v0.0.0 -- First version.');
-    cdflib.putAttrgEntry(cdf_id, acknow,     0, 'CDF_BYTE', '');
-    cdflib.putAttrgEntry(cdf_id, genby,      0, 'CDF_BYTE', '');
-    cdflib.putAttrgEntry(cdf_id, parents,    0, 'CDF_BYTE', 'CDF>Logical_file_id');
-    cdflib.putAttrgEntry(cdf_id, skel_ver,   0, 'CDF_BYTE', '');
-    cdflib.putAttrgEntry(cdf_id, rules,      0, 'CDF_BYTE', '');
-    cdflib.putAttrgEntry(cdf_id, time_res,   0, 'CDF_BYTE', '');
-    
-    
-    
+    cdflib.putAttrgEntry(cdf_id, link,       0, 'CDF_CHAR', 'http://mms-fields.unh.edu/');
+    cdflib.putAttrgEntry(cdf_id, link,       1, 'CDF_CHAR', 'http://mms.gsfc.nasa.gov/index.html');
+    cdflib.putAttrgEntry(cdf_id, link_text,  0, 'CDF_CHAR', 'UNH FIELDS Home Page');
+    cdflib.putAttrgEntry(cdf_id, link_text,  1, 'CDF_CHAR', 'NASA MMS Home');
+    cdflib.putAttrgEntry(cdf_id, link_title, 0, 'CDF_CHAR', 'UNH FIELDS');
+    cdflib.putAttrgEntry(cdf_id, link_title, 1, 'CDF_CHAR', 'NASA MMS Home');
+    cdflib.putAttrgEntry(cdf_id, mods,       0, 'CDF_CHAR', 'v0.0.0 -- First version.');
+    cdflib.putAttrgEntry(cdf_id, acknow,     0, 'CDF_CHAR', ' ');
+    cdflib.putAttrgEntry(cdf_id, genby,      0, 'CDF_CHAR', ' ');
+    cdflib.putAttrgEntry(cdf_id, parents,    0, 'CDF_CHAR', 'CDF>Logical_file_id');
+    cdflib.putAttrgEntry(cdf_id, skel_ver,   0, 'CDF_CHAR', ' ');
+    cdflib.putAttrgEntry(cdf_id, rules,      0, 'CDF_CHAR', ' ');
+    cdflib.putAttrgEntry(cdf_id, time_res,   0, 'CDF_CHAR', ' ');
     
     
 %------------------------------------------------------
-% Variables                                           |
+% Write Variable Attributes                           |
 %------------------------------------------------------
-    % Create variables
-    %   - MMS variables must adhere to the following naming conventions
-    %       scId_instrumentId_paramName_optionalDescriptor
-    varnum = cdflib.createVar(cdf_id, 'DEPEND_0', '
+    %
+    %   TIME
+    %
+    cdflib.putAttrEntry(cdf_id, catdesc,  t_ID, 'CDF_CHAR',  'Time variable')
+    cdflib.putAttrEntry(cdf_id, fieldnam, t_ID, 'CDF_CHAR',  'Time')
+    cdflib.putAttrEntry(cdf_id, fillval,  t_ID, 'CDF_EPOCH', -1.0E31)          % Defined in MMS_CDF_Format_Guide.docx
+    cdflib.putAttrEntry(cdf_id, format,   t_ID, 'CDF_CHAR',  'I16')
+    cdflib.putAttrEntry(cdf_id, lablax,   t_ID, 'CDF_CHAR',  'UT')             % Not required
+    cdflib.putAttrEntry(cdf_id, si_conv,  t_ID, 'CDF_CHAR',  '1e-9>seconds')   % Not required
+    cdflib.putAttrEntry(cdf_id, units,    t_ID, 'CDF_CHAR',  'nx')
+    cdflib.putAttrEntry(cdf_id, valmin,   t_ID, 'CDF_EPOCH', cdflib.computeEpoch([2015, 3, 1, 0, 0, 0, 0]))
+    cdflib.putAttrEntry(cdf_id, valmax,   t_ID, 'CDF_EPOCH', cdflib.computeEpoch([2050, 3, 1, 0, 0, 0, 0]))
+    cdflib.putAttrEntry(cdf_id, vartype,  t_ID, 'CDF_CHAR',  'support_data')
     
+    %
+    %   MAGNETIC FIELD
+    %
+    cdflib.putAttrEntry(cdf_id, catdesc,    b_ID, 'CDF_CHAR', ...
+        ['Three components of the magnetic field derive from a combination', ...
+         'of AFG, DFG, and SCM in the frequency domain. Depends on Epoch'])
+    cdflib.putAttrEntry(cdf_id, dep0,       b_ID, 'CDF_CHAR',  t_vname)
+    cdflib.putAttrEntry(cdf_id, disp_type,  b_ID, 'CDF_CHAR',  'time_series')
+    cdflib.putAttrEntry(cdf_id, fieldnam,   b_ID, 'CDF_CHAR',  'Magnetic Field')
+    cdflib.putAttrEntry(cdf_id, fillval,    b_ID, 'CDF_REAL4', single(-1.0E31))   % Defined in MMS_CDF_Format_Guide.docx
+    cdflib.putAttrEntry(cdf_id, format,     b_ID, 'CDF_CHAR',  'F12.6')
+    cdflib.putAttrEntry(cdf_id, labl_ptr_1, b_ID, 'CDF_CHAR',  b_labl_vname)
+    cdflib.putAttrEntry(cdf_id, si_conv,    b_ID, 'CDF_CHAR',  '1e-9>Tesla')
+    cdflib.putAttrEntry(cdf_id, units,      b_ID, 'CDF_CHAR',  'nT')
+    cdflib.putAttrEntry(cdf_id, valmin,     b_ID, 'CDF_REAL4', single(-100000.0))
+    cdflib.putAttrEntry(cdf_id, valmax,     b_ID, 'CDF_REAL4', single(100000.0))
+    cdflib.putAttrEntry(cdf_id, vartype,    b_ID, 'CDF_CHAR',  'data')
+    
+    %
+    %   B_LABL1
+    %
+    cdflib.putAttrEntry(cdf_id, catdesc,  b_ptr_ID, 'CDF_CHAR',  'Axis labels for magnetic field data.')
+    cdflib.putAttrEntry(cdf_id, fieldnam, b_ptr_ID, 'CDF_CHAR',  'Labl_Ptr_1')
+    cdflib.putAttrEntry(cdf_id, fillval,  b_ptr_ID, 'CDF_CHAR',  'N/A')   % Defined in MMS_CDF_Format_Guide.docx
+    cdflib.putAttrEntry(cdf_id, format,   b_ptr_ID, 'CDF_CHAR',  'A2')
+    cdflib.putAttrEntry(cdf_id, vartype,  b_ptr_ID, 'CDF_CHAR',  'metadata')
+    
+    
+%------------------------------------------------------
+% Write Variable Data                                 |
+%------------------------------------------------------
+    t_len = length(t);
+    b_len = size(b, 2);
+
+    cdflib.hyperPutVarData(cdf_id, t_ID,     [0, t_len, 1], {0, 1, 1}, t)
+    cdflib.hyperPutVarData(cdf_id, b_ID,     [0, b_len, 1], {0, 3, 1}, single(b'))
+    cdflib.hyperPutVarData(cdf_id, b_ptr_ID, [0,     3, 1], {0, 2, 1}, ['Bx'; 'By'; 'Bz'])
+    
+%------------------------------------------------------
+% Close the File                                      |
+%------------------------------------------------------
+    cdflib.close(cdf_id)
+    disp(['File written to ', filename])
+
 end
 
-%
-% Dissect an MMS file name. The file name format is:
-%
-%   scId_instrumentId_mode_dataLevel_optionalDataProductDescriptor_startTime_vX.Y.Z.cdf
-%
-% :Params:
-%   INSTRUMENTID:       in, required, type=char
-%                       Instrument or investigation identifier
-%   MODE:               in, required, type=string
-%                       Instrument telemetry mode.
-%   DATALEVEL:          in, required, type=string
-%                       Level of the data product.
-%   OPTDESC:            in, optional, type=char, default=''
-%                       Optional data product descriptor. Should be short
-%                           (3-8 characters). Hyphens used to separate
-%                           multiple components.
-%   STARTTIME:          in, required, type=char
-%                       Start time of the data product, formatted as:
-%                           'yyyymmddhhmmss'. Least significant fields can
-%                           be dropped when files start on regular hourly
-%                           or minute boundaries.
-%   VERSION:            in, required, type=char
-%                       Version number in the form: "vX.Y.Z"
-%                           X - Interface number. Increments represent
-%                               significant changes that will break code or
-%                               require code changes in analysis software.
-%                           Y - Quality number. Represents change in
-%                               quality of the, such as calibration or
-%                               fidelity. Should not impact software.
-%                           Z - Bug fix/Revision number. Minor changes to
-%                               the contents of the file due to
-%                               reprocessing of missing data. Dependent
-%                               data products should be reprocessed.
-%
-function [instID, mode, level, optdesc, startTime, version] = mms_dissect_filename(filename)
-    
-    % Form a recular expression to take apart the file name.
-    parts = regexp(filename, ['(mms[1-4])_', ...                % Instrument ID
-                              '([a-z]{4})_', ...                % Instrument Mode
-                              '([a-z1-2]+)_', ...               % Data Level
-                              '(.*)_', ...                      % Optional Descriptor
-                              '([0-9]+)_', ...                  % Start Time
-                              '(v[0-9]+\.[0-9]+\.[0-9]+)', ...  % Version
-                              '.cdf'], ...                      % Extension
-                              'tokens');
-    % Extract the parts
-    instID    = parts{1};
-    mode      = parts{2};
-    level     = parts{3};
-    optdesc   = parts{4};
-    startTime = parts{5};
-    version   = parts{6};
-end
 
 
 %
