@@ -68,12 +68,6 @@ function [b_scs] = STAFF_despin(data, OMEGA, dt, time, srtime)
         % to where an axis is pointing at the sun.
         SCS_mat = STAFF2FSR_despun(time(sIndex), srtime, OMEGA);
         
-        try
-            error(lastwarn);
-        catch err
-            disp(lastwarn);
-        end
-        
         % fast_rotat
         %   - Despin all points to time(sIndex)
         %   - Interchange axes so that

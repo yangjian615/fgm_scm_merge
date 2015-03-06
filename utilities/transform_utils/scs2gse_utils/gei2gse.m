@@ -20,11 +20,11 @@
 %                   Universal Time in hours since midnight.
 %
 % RETURNS
-%   ROT_GEI2GSE:    out, required, type=double
+%   T2:             out, required, type=double
 %                   Number of days since 17 Nov 1858 at 00:00 UT, which is
 %                       the definition of Modified Julian Date.
 %--------------------------------------------------------------------------
-function rot_gei2gse = gei2gse(mjd,ut)
+function T2 = gei2gse(mjd, ut)
     % Convert degrees to radians.
     deg_to_rad = pi/180;
     
@@ -58,5 +58,5 @@ function rot_gei2gse = gei2gse(mjd,ut)
              0    0   1];
          
     % Rotation from GEI to GSE
-    rot_gei2gse = T22*T21;
+    T2 = T22*T21;
 end

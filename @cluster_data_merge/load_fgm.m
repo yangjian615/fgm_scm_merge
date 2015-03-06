@@ -21,7 +21,7 @@ function [] = load_fgm(obj)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Eliminate Data                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Occasionally, data from the previous data will be included in the
+    % Occasionally, data from the previous day will be included in the
     % file. Remove it.
     if FSR_data(1,1) > 23
         % Find the first time in the new day

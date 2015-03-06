@@ -10,17 +10,25 @@
 %       Write merged magnetometer time (T) and magnetic field (B) data
 %       to file FILENAME.
 %--------------------------------------------------------------------------
-function [] = fsm_cdflib_write(filename, t, b)
+function [] = fsm_cdfmix_write(filename, t, b)
+    %
+    % cdflib is unable to write TT2000 times and cdfwrite/spdfcdfwrite are
+    % unable to manage variable attributes properly. Here, we use cdflib to
+    % do everything except write our "Epoch" time variable. At the end,
+    % cdfwrite appends our Epoch TT2000 variable to the file.
+    %
     
     nPts = length(t);
 
     % Necessities
     %   - File must not already exist.
+    %   - Time must be int64.
     %   - Magnetic field must be single precision
     %   - Magnetic field must be a row-vector (3xN)
-    assert(exist(filename, 'file') == 0, ['File already exists: "', filename, '".']);
-    assert(isa(b, 'single'), 'Magnetic field must be single precision.');
-    assert(isequal(size(b), [3 nPts]), 'B must be 3xN.');
+    assert( exist(filename, 'file') == 0,     ['File already exists: "', filename, '".']);
+    assert( iscell(t) && isa(t{1}, 'int64'),   'Time must be a cell array of int64 values.');
+    assert( isa(b, 'single'),                  'Magnetic field must be single precision.');
+    assert( isequal(size(b), [3 nPts]),        'B must be 3xN.');
     
     instID    = 'c1';
     mode      = 'srvy';
@@ -34,7 +42,17 @@ function [] = fsm_cdflib_write(filename, t, b)
 %     [instID, mode, level, optdesc, startTime, version] = mms_dissect_filename(filename);
 
     % Open the file
-    cdf_id = cdflib.create(filename);
+%    cdf_id = cdflib.create(filename);
+    
+%------------------------------------------------------
+% Start by Writing TT2000                             |
+%------------------------------------------------------
+    cdfwrite(filename, {'Epoch', t}, 'tt2000', true);
+    
+    % Open the file to write with cdflib
+    %   - Must turn validate off. cdfwrite uses higher version than cdflib
+    cdflib.setValidate('VALIDATEFILEoff');
+    cdf_id = cdflib.open(filename);
 
 %------------------------------------------------------
 % Create Global Attributes                            |
@@ -103,7 +121,8 @@ function [] = fsm_cdflib_write(filename, t, b)
     b_labl_vname = 'B_Labl_Ptr';
     
     % Create the variables
-    t_ID     = cdflib.createVar(cdf_id, t_vname,      'CDF_EPOCH', 1, [], true,  []);
+%    t_ID     = cdflib.createVar(cdf_id, t_vname,      'CDF_EPOCH', 1, [], true,  []);
+    t_ID     = cdflib.getVarNum(cdf_id, 'Epoch');
     b_ID     = cdflib.createVar(cdf_id, b_vname,      'CDF_REAL4', 1,  3, true,  true);
     b_ptr_ID = cdflib.createVar(cdf_id, b_labl_vname, 'CDF_CHAR',  1,  2, false, true);
     
@@ -196,8 +215,8 @@ function [] = fsm_cdflib_write(filename, t, b)
     t_len = length(t);
     b_len = size(b, 2);
 
-    cdflib.hyperPutVarData(cdf_id, t_ID,     [0, t_len, 1], {0, 1, 1}, t)
-    cdflib.hyperPutVarData(cdf_id, b_ID,     [0, b_len, 1], {0, 3, 1}, single(b'))
+%    cdflib.hyperPutVarData(cdf_id, t_ID,     [0, t_len, 1], {0, 1, 1}, t)
+    cdflib.hyperPutVarData(cdf_id, b_ID,     [0, b_len, 1], {0, 3, 1}, b)
     cdflib.hyperPutVarData(cdf_id, b_ptr_ID, [0,     3, 1], {0, 2, 1}, ['Bx'; 'By'; 'Bz'])
     
 %------------------------------------------------------
@@ -205,5 +224,4 @@ function [] = fsm_cdflib_write(filename, t, b)
 %------------------------------------------------------
     cdflib.close(cdf_id)
     disp(['File written to ', filename])
-
 end

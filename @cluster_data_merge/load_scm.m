@@ -8,9 +8,9 @@ function [] = load_scm(obj)
     
     % Create the Cluster Active Archive experiment name for the
     % data
-    exp_root = 'CP_STA_DWF_';
+    exp_root = 'STA_DWF';
     exp_mode = 'HBR';
-    experiment = [exp_root, exp_mode];
+    experiment = [exp_root '_' exp_mode];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Find the File                 %
@@ -26,29 +26,24 @@ function [] = load_scm(obj)
     % Look for a file with a high bit-rate (HBR) first. If none is found, search
     % again for nominal bit-rate (NBR).
     %
-    filename = make_cluster_filename(experiment, obj.sc, obj.date, ...
-                                     obj.tstart, obj.tend);
-    fullname = dir(fullfile(obj.data_dir, filename));
+    filename = c_find_file(experiment, obj.sc, obj.date, obj.tstart, obj.tend, obj.data_dir);
     
     % Look for NBR file if HBR was not found.
-    if isempty(fullname)
-        exp_mode = 'NBR';
-        experiment = [exp_root, exp_mode];
-        filename = make_cluster_filename(experiment, obj.sc, obj.date, ...
-                                         obj.tstart, obj.tend);
-        fullname = dir(fullfile(obj.data_dir, filename));
+    if isempty(filename)
+			exp_mode   = 'HBR';
+			experiment = [exp_root '_' exp_mode];
+			filename   = c_find_file(experiment, obj.sc, obj.date, obj.tstart, obj.tend, obj.data_dir);
     end
     
+    assert(exist(filename, 'file') == 2, ['STAFF file not found: ', filename])
     obj.mode = exp_mode;
-    fullname = fullfile(obj.data_dir, fullname.name);
-    assert(exist(fullname, 'file') == 2, ['STAFF file not found: ', filename])
     
     %
     % The variable names of the time and magnetic field data within 
     % the EXPERIMENT data file.
     %
-    t_name = ['Time__C', obj.sc, '_', experiment];
-    b_name    = ['B_vec_xyz_Instrument__C', obj.sc, '_', experiment];
+    t_name = ['Time__C', obj.sc, '_CP_', experiment];
+    b_name = ['B_vec_xyz_Instrument__C', obj.sc, '_CP_', experiment];
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Read Data                     %
@@ -63,10 +58,10 @@ function [] = load_scm(obj)
     % variables. Convert cdf epoch time values to MatLab serial 
     % date values.
     %
-    cdfdata = cdfread(fullname,             ...
-       'Variable', {t_name, b_name},        ...
-       'CombineRecords', true,              ...
-       'ConvertEpochToDatenum', true);
+    cdfdata = spdfcdfread(filename,                     ...
+                          'Variable', {t_name, b_name}, ...
+                          'CombineRecords', true,       ...
+                          'ConvertEpochToDatenum', true);
    
    % Turn file validation back on
     cdflib.setValidate('VALIDATEFILEon')
@@ -77,7 +72,7 @@ function [] = load_scm(obj)
     
     % Convert data interval to datenumbers
     sDateNum = datenum([obj.date, ' ', obj.tstart], 'yyyy-mm-dd HH:MM:SS');
-    eDateNum = datenum([obj.date, ' ', obj.tend], 'yyyy-mm-dd HH:MM:SS');
+    eDateNum = datenum([obj.date, ' ', obj.tend],   'yyyy-mm-dd HH:MM:SS');
     
     % Find the appropriate index range.
     irange = zeros(2,1);
